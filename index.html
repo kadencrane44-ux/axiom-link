@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AXIOM">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b0c14">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>AXIOM</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0c14;color:#e9eaf5;font:16px -apple-system,system-ui,sans-serif}
+  main{min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px 24px;box-sizing:border-box;max-width:460px;margin:0 auto}
+  .logo{width:64px;height:64px;border-radius:16px}
+  h1{margin:0;font-size:26px;letter-spacing:.02em}
+  p{margin:0;color:#a3a7c2;line-height:1.5}
+  a.btn{display:block;text-align:center;background:#7c7cf8;color:#fff;text-decoration:none;font-weight:600;padding:16px;border-radius:14px}
+  ol{margin:0;padding-left:20px;color:#a3a7c2;line-height:1.7}
+  .err{color:#ff8a94}
+</style>
+</head>
+<body>
+<main>
+  <img class="logo" src="apple-touch-icon.png" alt="">
+  <h1 id="h">Opening AXIOM…</h1>
+  <p id="msg">Connecting to your Mac.</p>
+  <a class="btn" id="go" href="#" hidden>Open AXIOM</a>
+  <ol id="howto" hidden>
+    <li>Tap <b>Share</b> (square with arrow) below.</li>
+    <li>Tap <b>Add to Home Screen</b> → <b>Add</b>.</li>
+    <li>From now on, open AXIOM from that icon — it signs you in automatically, wherever you are.</li>
+  </ol>
+</main>
+<script>
+(function () {
+  var GIST = "58f5744d5b3bae13164908635175f78f";
+  var KEY_RE = /^[A-Za-z0-9_-]{16,200}$/;
+  var key = "";
+  var m = location.hash.match(/^#k=([A-Za-z0-9_-]{16,200})$/);
+  if (m) { key = m[1]; try { localStorage.setItem("axk", key); } catch (e) {} }
+  if (!key) { try { key = localStorage.getItem("axk") || ""; } catch (e) {} }
+  var standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  var h = document.getElementById("h"), msg = document.getElementById("msg"),
+      go = document.getElementById("go"), howto = document.getElementById("howto");
+  if (!KEY_RE.test(key)) {
+    h.textContent = "Link incomplete";
+    msg.innerHTML = '<span class="err">This link is missing its key.</span> Open the AXIOM link from your Telegram (Vanta) message.';
+    return;
+  }
+  fetch("https://api.github.com/gists/" + GIST + "?t=" + Date.now(), { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("status " + r.status); return r.json(); })
+    .then(function (g) {
+      var base = String(((g.files || {})["url.txt"] || {}).content || "").trim();
+      if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(base)) throw new Error("no address yet");
+      var target = base + "/#k=" + key;
+      go.href = target;
+      if (standalone) { location.replace(target); return; }
+      h.textContent = "AXIOM";
+      msg.textContent = "Add this page to your Home Screen once — it always finds your Mac, even after restarts.";
+      go.hidden = false; howto.hidden = false;
+    })
+    .catch(function () {
+      h.textContent = "Mac is offline";
+      msg.innerHTML = '<span class="err">Can’t reach your Mac right now.</span> Make sure it’s on, plugged in and connected to the internet, then reopen this.';
+    });
+})();
+</script>
+</body>
+</html>
