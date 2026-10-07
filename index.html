@@ -46,9 +46,11 @@
   var standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
   var h = document.getElementById("h"), msg = document.getElementById("msg"),
       go = document.getElementById("go"), howto = document.getElementById("howto");
-  if (!KEY_RE.test(key)) {
-    h.textContent = "Link incomplete";
-    msg.innerHTML = '<span class="err">This link is missing its key.</span> Open the AXIOM link from your Telegram (Vanta) message.';
+  var bounced = /[?&]go=1/.test(location.search);
+  if (!KEY_RE.test(key) && bounced) {
+    h.textContent = "Tap your Vanta link";
+    msg.innerHTML = 'This phone needs its sign-in key again. Open <b>Telegram → Vanta</b> and tap the latest <b>Open AXIOM</b> link — it signs you in and you won’t need it again.';
+    go.href = "tg://resolve?domain=VANTALTERTBOT"; go.textContent = "Open Telegram"; go.hidden = false;
     return;
   }
   fetch("https://api.github.com/gists/" + GIST + "?t=" + Date.now(), { cache: "no-store" })
@@ -56,7 +58,10 @@
     .then(function (g) {
       var base = String(((g.files || {})["url.txt"] || {}).content || "").trim();
       if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(base)) throw new Error("no address yet");
-      var target = base + "/#k=" + key;
+      // No saved key: still go in — the dashboard's own session usually works; if it doesn't,
+      // it bounces back here with ?go=1 and we point to the Telegram link (no loop).
+      var target = KEY_RE.test(key) ? base + "/#k=" + key : base + "/";
+      if (!KEY_RE.test(key)) { location.replace(target); return; }
       go.href = target;
       // From the home-screen icon, or bounced back by a signed-out dashboard (?go=1): go straight in.
       if (standalone || /[?&]go=1/.test(location.search)) { location.replace(target); return; }
