@@ -58,7 +58,8 @@
       if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(base)) throw new Error("no address yet");
       var target = base + "/#k=" + key;
       go.href = target;
-      if (standalone) { location.replace(target); return; }
+      // From the home-screen icon, or bounced back by a signed-out dashboard (?go=1): go straight in.
+      if (standalone || /[?&]go=1/.test(location.search)) { location.replace(target); return; }
       h.textContent = "AXIOM";
       msg.textContent = "Add this page to your Home Screen once — it always finds your Mac, even after restarts.";
       go.hidden = false; howto.hidden = false;
